@@ -33,7 +33,8 @@ if __name__ == "__main__":
     map_name = args.map
     map_folder = Path(__file__).parent / "data" / str(map_name)
     if not map_folder.is_dir():
-        raise RuntimeError()
+        raise RuntimeError(f"Map folder {map_folder} not found!")
+        
     map_path = map_folder / "map.png"
     world_map = cv2.imread(str(map_path))
     info_path = map_folder / "info.json"
@@ -63,9 +64,10 @@ if __name__ == "__main__":
             "search_radius":200,  
         }
     else:
-        raise RuntimeError()
+        raise RuntimeError(f"Unknown planner: {args.planner}")
     
     # plan
+    print(f"Running {args.planner} on {args.map}...")
     path, vidited_nodes = planner.plan(**planner_argument)
 
     # visualization
@@ -76,6 +78,18 @@ if __name__ == "__main__":
     )
     visualization = visualize_visited_nodes(visualization, vidited_nodes)
     visualization = visualize_path(visualization, path)
-    cv2.imshow("", visualization)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+    # --- Headless ---
+    current_dir = Path(__file__).parent
+    result_dir = current_dir / "result"
+    result_dir.mkdir(parents=True, exist_ok=True)
+    output_name = f"result_{args.planner}_{args.map}.png"
+    save_path = result_dir / output_name
+    cv2.imwrite(str(save_path), visualization)
+    
+    print(f"Success! Path found with {len(path)} nodes.")
+    print(f"Visualization saved as: {output_name}")
+
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # -----------------------
