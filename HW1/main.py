@@ -1,4 +1,5 @@
 import argparse
+import random
 import json
 from pathlib import Path
 
@@ -10,6 +11,8 @@ from your_implementation import (
     RRTStarImplementation
 )
 
+
+random.seed(9999)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
