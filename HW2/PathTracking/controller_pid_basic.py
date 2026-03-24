@@ -9,7 +9,7 @@ class ControllerPIDBasic(Controller):
     def __init__(self, 
                  model, 
                  # TODO 4.1.2: Tune PID Gains
-                 kp=0.0, 
+                 kp=1.0, 
                  ki=0.0, 
                  kd=0.0):
         self.path = None
@@ -31,14 +31,14 @@ class ControllerPIDBasic(Controller):
         # Check Path
         if self.path is None:
             print("No path !!")
-            return None, None
+            return None
         
         # Extract State
         x, y, yaw = info["x"], info["y"], info["yaw"]
 
         # Check if reached end of track
         if self.current_idx >= len(self.path) - 3:
-            return 0, self.path[-1]
+            return 0
 
         # Search Nearest Target Locally
         min_idx, min_dist = utils.search_nearest_local(self.path, (x,y), self.current_idx, lookahead=50)

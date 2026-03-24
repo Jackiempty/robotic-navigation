@@ -60,7 +60,7 @@ def generate_speed_profile(path_x, path_y, max_v=20.0, max_lat_acc=2.0, max_long
     curvature = np.clip(curvature, 0, 10.0)
 
     # TODO 3.1.b Speed limit from curvature
-    v_ref = np.zeros_like(curvature)
+    v_ref = np.ones_like(curvature) * 15
     # [end] TODO 3.1.b
 
     # TODO 3.1.c Longitudinal Smoothing
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     path_y = data[:, 1]
     
     # Dynamic limitation
-    max_v = 80.0
+    max_v = 85.0
     max_lat_acc = 30.0
     max_long_acc = 12.0
     max_long_dec = 18.0

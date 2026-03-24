@@ -23,14 +23,14 @@ class ControllerStanleyBicycle(Controller):
         # Check Path
         if self.path is None:
             print("No path !!")
-            return None, None
+            return None
         
         # Extract State 
         x, y, yaw, delta, v = info["x"], info["y"], info["yaw"], info["delta"], info["v"]
 
         # Check if reached end of track
         if self.current_idx >= len(self.path) - 5:
-            return 0.0, self.path[-1]
+            return 0.0
 
         # Search Front Wheel Target Locally
         front_x = x + self.l*np.cos(np.deg2rad(yaw))

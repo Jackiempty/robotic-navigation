@@ -29,12 +29,14 @@ class ControllerLQRBicycle(Controller):
         self.dt = model.dt
         self.l = model.l
         self.control_state = control_state
+        self.current_idx = 0
 
     def set_path(self, path):
         super().set_path(path)
         self.pe = 0
         self.pth_e = 0
         self.pdelta = 0
+        self.current_idx = 0
 
     def _solve_DARE(self, A, B, Q, R, max_iter=150, eps=0.01): # Discrete-time Algebra Riccati Equation (DARE)
         P = Q.copy()
@@ -51,14 +53,18 @@ class ControllerLQRBicycle(Controller):
         # Check Path
         if self.path is None:
             print("No path !!")
-            return None, None
+            return None
         
         # Extract State 
         x, y, yaw, delta, v = info["x"], info["y"], info["yaw"], info["delta"], info["v"]
         yaw = utils.angle_norm(yaw)
+
+        # Check if reached end of track
+        if self.current_idx >= len(self.path) - 3:
+            return 0.0
         
         # Search Nesrest Target
-        min_idx, min_dist = utils.search_nearest(self.path, (x,y))
+        min_idx, min_dist = utils.search_nearest_local(self.path, (x,y), self.current_idx, lookahead=50)
         target = self.path[min_idx]
         target[2] = utils.angle_norm(target[2])
         

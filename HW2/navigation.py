@@ -2,13 +2,8 @@
 import argparse
 import numpy as np
 import cv2
-import os
-import time
 import collections
-import urllib.request
 from Simulation.utils import ControlState
-import Simulation.utils as utils
-import PathTracking.utils as pt_utils
 from trajectory_generator import natural_cubic_spline, adaptive_sampling, uniform_sampling, generate_speed_profile
 
 ##############################
@@ -112,8 +107,7 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             v_ref_history.append(0.0)
             
         v_history.append(simulator.state.v)
-        
-        _, info = simulator.step(command)        
+             
         camera_view = render_dynamic_camera_and_minimap(simulator, camera_w, camera_h, path, way_points, nav_pos)
         
         # Evaluate and Draw Metrics HUD
@@ -160,7 +154,7 @@ def setup_simulator_and_controller(args):
                 controller = Controller(model=simulator.model)
             elif args.controller == "pure_pursuit":
                 from PathTracking.controller_pure_pursuit_basic import ControllerPurePursuitBasic as Controller
-                controller = Controller(model=simulator.model, Lfc=1)
+                controller = Controller(model=simulator.model)
             elif args.controller == "lqr":
                 from PathTracking.controller_lqr_basic import ControllerLQRBasic as Controller
                 controller = Controller(model=simulator.model)
@@ -176,7 +170,7 @@ def setup_simulator_and_controller(args):
                 controller = Controller(model=simulator.model)
             elif args.controller == "pure_pursuit":
                 from PathTracking.controller_pure_pursuit_basic import ControllerPurePursuitBasic as Controller
-                controller = Controller(model=simulator.model, Lfc=1)
+                controller = Controller(model=simulator.model)
             elif args.controller == "lqr":
                 from PathTracking.controller_lqr_basic import ControllerLQRBasic as Controller
                 controller = Controller(model=simulator.model)
@@ -186,13 +180,13 @@ def setup_simulator_and_controller(args):
             from Simulation.simulator_bicycle import SimulatorBicycle 
             simulator = SimulatorBicycle()
             from PathTracking.long_controller_pid import PIDLongController
-            l_controller = PIDLongController(model=simulator.model, a_range=simulator.a_range, kp=1, ki=0.0001, kd=0.5)
+            l_controller = PIDLongController(model=simulator.model, a_range=simulator.a_range)
             if args.controller == "pid":
                 from PathTracking.controller_pid_bicycle import ControllerPIDBicycle as Controller
                 controller = Controller(model=simulator.model)
             elif args.controller == "pure_pursuit":
                 from PathTracking.controller_pure_pursuit_bicycle import ControllerPurePursuitBicycle as Controller
-                controller = Controller(model=simulator.model, Lfc=1)
+                controller = Controller(model=simulator.model)
             elif args.controller == "stanley":
                 from PathTracking.controller_stanley_bicycle import ControllerStanleyBicycle as Controller
                 controller = Controller(model=simulator.model)
@@ -230,12 +224,15 @@ def load_and_process_track(track_name, map_w, map_h, simulator):
     scaled_x = (raw_x - center_x) + (map_w / 2.0) / render_scale
     scaled_y = (raw_y - center_y) + (map_h / 2.0) / render_scale
     
+    # Cubic Spline Interpolation
     t_anchors = np.linspace(0, 1, len(scaled_x))
     t_path = np.linspace(0, 1, 2000)
     path_x = natural_cubic_spline(t_anchors, scaled_x, t_path)
     path_y = natural_cubic_spline(t_anchors, scaled_y, t_path)
     
+    # Velocity Profiling
     v_ref, k = generate_speed_profile(path_x, path_y, max_v=85.0, max_lat_acc=30, max_long_acc=12, max_long_dec=18)
+    # Waypoint Sampling
     wp_x, wp_y, wp_v = adaptive_sampling(path_x, path_y, k, v_ref=v_ref, min_ds=2.0, max_ds=10.0, k_gain=200.0)
     
     wp_yaw = np.zeros_like(wp_x)
@@ -261,6 +258,7 @@ if __name__ == "__main__":
     map_w, map_h = 2000, 2000 
 
     simulator, controller, long_controller, planner = setup_simulator_and_controller(args)
+    # Sparse Waypoint -> Trajectory
     way_points, path = load_and_process_track(args.track, map_w, map_h, simulator)
     
     nav_pos = (int(path[-1][0]), int(path[-1][1]))

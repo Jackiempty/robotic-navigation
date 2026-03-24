@@ -24,7 +24,7 @@ class VanillaLongController(Controller):
         x, y, yaw = info["x"], info["y"], info["yaw"]
 
         # Check if reached end of track
-        if self.current_idx >= len(self.path) - 3:
+        if self.current_idx >= len(self.path) - 1:
             return 0, self.path[-1]
 
         # Search Nearest Target Locally

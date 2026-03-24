@@ -30,14 +30,14 @@ class ControllerPIDBicycle(Controller):
         # Check Path
         if self.path is None:
             print("No path !!")
-            return None, None
+            return None
         
         # Extract State
         x, y, yaw = info["x"], info["y"], info["yaw"]
 
         # Check if reached end of track
         if self.current_idx >= len(self.path) - 5:
-            return 0.0, self.path[-1]
+            return 0.0
 
         # Search Nearest Target Locally
         min_idx, min_dist = utils.search_nearest_local(self.path, (x,y), self.current_idx, lookahead=50)
