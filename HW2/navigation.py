@@ -79,8 +79,13 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
                 next_v, target = long_controller.feedback(info)
                 next_w = controller.feedback(info)
                 # TODO 2.2.2: Map [v, w] to [lw, rw]
-                next_lw = 0
-                next_rw = 0
+                r = simulator.wu / 2.0
+                l = simulator.l
+                next_w_rad = np.deg2rad(next_w)
+                next_lw_rad = (next_v - next_w_rad * l) / r
+                next_rw_rad = (next_v + next_w_rad * l) / r
+                next_lw = np.rad2deg(next_lw_rad)
+                next_rw = np.rad2deg(next_rw_rad)
                 # [end] TODO 2.2.2
                 command = ControlState("diff_drive", next_lw, next_rw)
             elif args.simulator == "bicycle":
