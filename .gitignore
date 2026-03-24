@@ -25,3 +25,4 @@ MANIFEST
 obj_dir/
 *.vcd
 .vscode
+*.log
