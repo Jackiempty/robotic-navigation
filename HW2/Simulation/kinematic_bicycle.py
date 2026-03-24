@@ -17,7 +17,17 @@ class KinematicModelBicycle(KinematicModel):
 
     def step(self, state:State, cstate:ControlState) -> State:
         # TODO 2.3.1: Bicycle Kinematic Model
-        v, w, x, y, yaw = 0, 0, state.x, state.y, state.yaw
+        v, w, x, y, yaw = state.v, state.w, state.x, state.y, state.yaw
+        a, delta = cstate.a, cstate.delta
+        x_delta = v * np.cos(np.deg2rad(yaw)) * self.dt
+        y_delta = v * np.sin(np.deg2rad(yaw)) * self.dt
+        yaw_delta = (v / self.l) * np.tan(np.deg2rad(delta)) * self.dt
+
+        x += x_delta
+        y += y_delta
+        yaw += np.rad2deg(yaw_delta)
+        v += a * self.dt
+        w = np.rad2deg((v / self.l) * np.tan(np.deg2rad(delta)))
         # [end] TODO 2.3.1
         state_next = State(x, y, yaw, v, w)
         return state_next
