@@ -27,7 +27,8 @@ class State:
         return (self.x, self.y, self.yaw)
     
     def __str__(self):
-        return "[State] x={:.4f}, y={:.4f}, yaw={:.4f}, v={:.4f}, w={:.4f}".format(self.x, self.y, self.yaw, self.v, self.w)
+        # return "[State] x={:.4f}, y={:.4f}, yaw={:.4f}, v={:.4f}, w={:.4f}".format(self.x, self.y, self.yaw, self.v, self.w)
+        return "{:.4f}, {:.4f}, {:.4f}, {:.4f}, {:.4f}".format(self.x, self.y, self.yaw, self.v, self.w)
 
 class ControlState:
     def __init__(self, control_type, *cstate): 
@@ -50,11 +51,11 @@ class ControlState:
     
     def __str__(self):
         if self.control_type == "basic":
-            return "[ControlState] v={}, w={}".format(self.v, self.w)
+            return "{}, {}".format(self.v, self.w)
         elif self.control_type == "diff_drive": # Differential Drive Vehicle
-            return "[ControlState] lw={}, rw={}".format(self.lw, self.rw)
+            return "{}, {}".format(self.lw, self.rw)
         elif self.control_type == "bicycle":
-            return "[ControlState] a={}, delta={}".format(self.a, self.delta)
+            return "{}, {}".format(self.a, self.delta)
 
 def rot_pos(x,y,phi_):
     phi = np.deg2rad(phi_)

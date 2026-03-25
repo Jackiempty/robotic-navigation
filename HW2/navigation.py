@@ -23,12 +23,12 @@ from navigation_utils import pos_int, render_path, render_dynamic_camera_and_min
 
 def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
     global pose, nav_pos, way_points, path, set_controller_path
-    window_name = "HW2 Navigation Demo"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-    # Resize window to initial size so getWindowImageRect works reliably at start
-    cv2.resizeWindow(window_name, 800, 800)
-    # Disable mouse click for interactive path planning
-    # cv2.setMouseCallback(window_name, mouse_click)
+
+    if not args.headless:
+        window_name = "HW2 Navigation Demo"
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(window_name, 800, 800)
+
     simulator.init_pose(start_pose)
     command = ControlState(args.simulator, None, None)
     pose = start_pose
@@ -49,12 +49,22 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
     cte_history = []
     nav_current_idx = 0
     has_finished = False
+    MAX_SIM_TICKS = 10000
     
     # Main Loop
     while(True):
         if not has_finished:
             sim_ticks += 1
-            print("\r", simulator, "| Goal:", nav_pos, end="\t")
+            if args.headless and sim_ticks % 100 == 0:
+                # print(f"\rRunning... Ticks: {sim_ticks}", end="")
+                pass
+            elif not args.headless:
+                print("\r", simulator, nav_pos, end="\t")
+            
+            if sim_ticks > MAX_SIM_TICKS:
+                print(f"\n[WARNING] Simulation Timeout! The car probably flew off the track.")
+                break
+
         # Update State
         simulator.step(command)
         pose = (simulator.state.x, simulator.state.y, simulator.state.yaw)
@@ -112,31 +122,35 @@ def navigation(args, simulator, controller, planner, start_pose=(100,200,0)):
             v_ref_history.append(0.0)
             
         v_history.append(simulator.state.v)
-             
-        camera_view = render_dynamic_camera_and_minimap(simulator, camera_w, camera_h, path, way_points, nav_pos)
+        if not args.headless:
+            camera_view = render_dynamic_camera_and_minimap(simulator, camera_w, camera_h, path, way_points, nav_pos)
+        else:
+            camera_view = np.zeros((10, camera_w, 3), dtype=np.uint8)
         
         # Evaluate and Draw Metrics HUD
         nav_current_idx, has_finished = evaluate_and_draw_metrics(
             simulator, path, nav_current_idx, cte_history, has_finished, sim_ticks, camera_view
         )
-        
-        # Velocity Plot
-        plot_view = render_velocity_plot(v_history, v_ref_history, camera_w, 250)
-        final_view = np.vstack((camera_view, plot_view))
-        
-        # Show the final tracking view
-        cv2.imshow(window_name, final_view)
-        
-        k = cv2.waitKey(1)
-        if k == ord('r'):
-            simulator.init_state(start_pose)
-            sim_ticks = 0
-            cte_history = []
-            nav_current_idx = 0
-            has_finished = False
-        if k == 27:
-            print()
+
+        if not args.headless:
+            plot_view = render_velocity_plot(v_history, v_ref_history, camera_w, 250)
+            final_view = np.vstack((camera_view, plot_view))
+            cv2.imshow(window_name, final_view)
+            
+            k = cv2.waitKey(1)
+            if k == ord('r'):
+                simulator.init_state(start_pose)
+                sim_ticks = 0
+                cte_history = []
+                nav_current_idx = 0
+                has_finished = False
+            if k == 27:
+                print()
+                break
+
+        if has_finished:
             break
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -145,6 +159,7 @@ def parse_arguments():
     parser.add_argument("-t", "--track", type=str, default="1000mStraight", choices=['400mRunningTrack', '1000mStraight', 'Silverstone', 'Suzuka', 'Monza'], help="Name of track to load")
     parser.add_argument("-lcs", "--lqr_control_state", type=str, default="steering_angle", choices=['steering_angle', 'steering_angular_velocity'], help="control state of LQR control of bicycle model")
     parser.add_argument("-is", "--init_shift", type=float, default=0.0, help="init location shift")
+    parser.add_argument("--headless", action="store_true", help="Run without GUI and exit automatically when finished")
     return parser.parse_args()
 
 def setup_simulator_and_controller(args):
@@ -165,6 +180,7 @@ def setup_simulator_and_controller(args):
                 controller = Controller(model=simulator.model)
             else:
                 raise NameError("Unknown controller!!")
+                
         elif args.simulator == "diff_drive":
             from Simulation.simulator_differential_drive import SimulatorDifferentialDrive
             simulator = SimulatorDifferentialDrive()
@@ -181,6 +197,7 @@ def setup_simulator_and_controller(args):
                 controller = Controller(model=simulator.model)
             else:
                 raise NameError("Unknown controller!!")
+                
         elif args.simulator == "bicycle":
             from Simulation.simulator_bicycle import SimulatorBicycle 
             simulator = SimulatorBicycle()
@@ -209,6 +226,10 @@ def setup_simulator_and_controller(args):
 def load_and_process_track(track_name, map_w, map_h, simulator):
     filename = f"tracks/{track_name}.csv"  
     print(f"Loading {track_name} track...")
+    if not args.headless:
+        print(args.simulator)
+        print("[State] x, y, yaw, v, w [ControlState] v/lw/a, w/rw/delta")
+        
     data = np.loadtxt(filename, delimiter=',', skiprows=1)
     raw_x = data[:, 0]
     raw_y = data[:, 1]
