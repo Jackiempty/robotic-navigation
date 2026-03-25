@@ -12,16 +12,16 @@ class ControllerLQRBicycle(Controller):
             self.Q = np.eye(2)
             self.R = np.eye(1)
             # TODO 4.4.1: Tune LQR Gains
-            self.Q[0,0] = 1
-            self.Q[1,1] = 1 
-            self.R[0,0] = 1
+            self.Q[0,0] = 10
+            self.Q[1,1] = 1
+            self.R[0,0] = 10
         elif control_state == 'steering_angular_velocity':
             self.Q = np.eye(3)
             self.R = np.eye(1)
             # TODO 4.4.4: Tune LQR Gains
-            self.Q[0,0] = 1
+            self.Q[0,0] = 15
             self.Q[1,1] = 1
-            self.Q[2,2] = 1
+            self.Q[2,2] = 0.1
             self.R[0,0] = 1
         self.pe = 0
         self.pth_e = 0
@@ -70,11 +70,82 @@ class ControllerLQRBicycle(Controller):
         
         if self.control_state == 'steering_angle':
             # TODO 4.4.1: LQR Control for Bicycle Kinematic Model with steering angle as control input
-            next_delta = 0
+            self.current_idx = min_idx
+            v_ = max(v, 0.1)
+            yaw_rad = np.deg2rad(yaw)
+            target_yaw_rad = np.deg2rad(target[2])
+            A = np.array([
+                [1.0, v_ * self.dt],
+                [0.0, 1.0]
+            ])
+            B = np.array([
+                [0.0],
+                [(v_ * self.dt) / self.l]
+            ])
+            dx = x - target[0]
+            dy = y - target[1]
+            e = -np.sin(target_yaw_rad) * dx + np.cos(target_yaw_rad) * dy
+            th_e = utils.angle_norm(yaw - target[2])
+            th_e_rad = np.deg2rad(th_e)
+            X = np.array([
+                [e],
+                [th_e_rad]
+            ])
+
+            # LQR
+            P = self._solve_DARE(A, B, self.Q, self.R)
+            K = np.linalg.inv(self.R + B.T @ P @ B) @ (B.T @ P @ A)
+            u = -(K @ X)[0, 0]   # rad
+
+            # ---------- Feedforward ----------
+            if min_idx + 1 < len(self.path):
+                next_target = self.path[min_idx + 1]
+                dx2 = next_target[0] - target[0]
+                dy2 = next_target[1] - target[1]
+                ds = np.hypot(dx2, dy2)
+                dyaw = utils.angle_norm(next_target[2] - target[2])
+                dyaw = np.deg2rad(dyaw)
+                kappa = dyaw / ds if ds > 1e-4 else 0.0
+            else:
+                kappa = 0.0
+
+            delta_ff = np.arctan(self.l * kappa)
+            delta_rad = u + delta_ff
+            next_delta = np.rad2deg(delta_rad)
             # [end] TODO 4.4.1
         elif self.control_state == 'steering_angular_velocity':
             # TODO 4.4.4: LQR Control for Bicycle Kinematic Model with steering angular velocity as control input
-            next_delta = 0
+            self.current_idx = min_idx
+            v_ = max(v, 0.1)
+            yaw_rad = np.deg2rad(yaw)
+            target_yaw_rad = np.deg2rad(target[2])
+            delta_rad = np.deg2rad(delta)
+            A = np.array([
+                [1.0, v_ * self.dt, 0.0],
+                [0.0, 1.0, (v_ * self.dt) / self.l],
+                [0.0, 0.0, 1.0]
+            ])
+            B = np.array([
+                [0.0],
+                [0.0],
+                [self.dt]
+            ])
+            dx = x - target[0]
+            dy = y - target[1]
+            e = -np.sin(target_yaw_rad) * dx + np.cos(target_yaw_rad) * dy
+            th_e = utils.angle_norm(yaw - target[2])
+            th_e_rad = np.deg2rad(th_e)
+            X = np.array([
+                [e],
+                [th_e_rad],
+                [delta_rad]
+            ])
+            # LQR
+            P = self._solve_DARE(A, B, self.Q, self.R)
+            K = np.linalg.inv(self.R + B.T @ P @ B) @ (B.T @ P @ A)
+            u = -(K @ X)[0, 0]   # rad/s
+            next_delta_rad = delta_rad + u * self.dt
+            next_delta = np.rad2deg(next_delta_rad)
             # [end] TODO 4.4.4
         
         return next_delta
