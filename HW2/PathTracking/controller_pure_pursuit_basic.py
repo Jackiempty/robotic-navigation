@@ -8,7 +8,7 @@ from PathTracking.controller import Controller
 class ControllerPurePursuitBasic(Controller):
     def __init__(self, model, 
                  # Optional TODO: Tune Pure Pursuit Gain
-                 kp=1, Lfc=10):
+                 kp=0.5, Lfc=1.0):
         self.path = None
         self.kp = kp
         self.Lfc = Lfc
@@ -38,6 +38,23 @@ class ControllerPurePursuitBasic(Controller):
 
         # Optional TODO: Pure Pursuit Control for Basic Kinematic Model
         # You can implement this if you want to use Pure Pursuit for basic kinematic model in F1 Challenge
-        next_w = 0
+        target_idx = min_idx
+        for i in range(min_idx, len(self.path)):
+            dist = np.hypot(self.path[i][0] - x, self.path[i][1] - y)
+            if dist >= Ld:
+                target_idx = i
+                break
+        
+        target = self.path[target_idx]
+
+        theta_target = np.rad2deg(np.arctan2(target[1] - y, target[0] - x))
+        alpha_deg = theta_target - yaw
+        actual_Ld = np.hypot(target[0] - x, target[1] - y)
+        if actual_Ld < 1e-4:
+            actual_Ld = 1e-4
+
+        alpha_rad = np.deg2rad(alpha_deg)
+        w_rad = (2 * v * np.sin(alpha_rad)) / actual_Ld
+        next_w = np.rad2deg(w_rad)
         
         return next_w

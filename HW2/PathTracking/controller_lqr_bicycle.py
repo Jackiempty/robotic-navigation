@@ -19,10 +19,10 @@ class ControllerLQRBicycle(Controller):
             self.Q = np.eye(3)
             self.R = np.eye(1)
             # TODO 4.4.4: Tune LQR Gains
-            self.Q[0,0] = 15
-            self.Q[1,1] = 1
+            self.Q[0,0] = 10
+            self.Q[1,1] = 5
             self.Q[2,2] = 0.1
-            self.R[0,0] = 1
+            self.R[0,0] = 20
         self.pe = 0
         self.pth_e = 0
         self.pdelta = 0
