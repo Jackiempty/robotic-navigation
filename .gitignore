@@ -26,3 +26,49 @@ obj_dir/
 *.vcd
 .vscode
 *.log
+
+# --- LaTeX compilation intermidiate ---
+*.aux
+*.glo
+*.idx
+*.log
+*.toc
+*.ist
+*.acn
+*.acr
+*.alg
+*.bbl
+*.blg
+*.dvi
+*.glg
+*.gls
+*.ilg
+*.ind
+*.lof
+*.lot
+*.maf
+*.mtc
+*.mtc0
+*.nav
+*.nlo
+*.out
+*.pdfsync
+*.snm
+*.synctex.gz
+*.thm
+*.vrb
+*.xdy
+*.tdo
+
+# --- Latexmk tool files (VS Code default) ---
+*.fls
+*.fdb_latexmk
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- editor settings ---
+.vscode/
+*.sublime-project
+*.sublime-workspace
