@@ -24,7 +24,7 @@ def main():
     clip_val = 0.2
     lr = 1e-4
     n_iter = 30000
-    device = "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
     # Parameters that are fixed
     # ----------------------------

@@ -15,7 +15,7 @@ def main():
     s_dim = 14
     a_dim = 1
     save_dir = "./save"
-    device = "cpu"
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
     # Create environment & model
     # ----------------------------

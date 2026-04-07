@@ -2,6 +2,7 @@
 __pycache__/
 .venv/
 result/
+save/
 
 # Distribution / packaging
 .Python

@@ -16,13 +16,13 @@ class PPO:
         sample_n_epoch=4,
         sample_mb_size=64,
         mb_size=1024,
-        device="cpu",
+        device=None,
     ):
         self.policy_net = policy_net
         self.value_net = value_net
         self.opt_actor = torch.optim.Adam(self.policy_net.parameters(), lr)
         self.opt_critic = torch.optim.Adam(self.value_net.parameters(), lr)
-        self.device = device
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
         self.lr = lr
         self.max_grad_norm = max_grad_norm
         self.clip_val = clip_val
@@ -56,9 +56,10 @@ class PPO:
                 sample_values = self.value_net(sample_states)
 
                 # TODO 4: Policy gradient loss for PPO
-                """
-                pg_loss  = ...
-                """
+                ratio = torch.exp(sample_a_logps - sample_old_a_logps)
+                surr1 = ratio * sample_advs
+                surr2 = torch.clamp(ratio, 1.0 - self.clip_val, 1.0 + self.clip_val) * sample_advs
+                pg_loss = -torch.min(surr1, surr2).mean()
 
                 # PPO loss
                 v_pred_clip = sample_old_values + torch.clamp(

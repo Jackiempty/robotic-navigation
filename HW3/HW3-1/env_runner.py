@@ -47,7 +47,7 @@ def compute_gae(rewards, values, dones, last_values, last_dones, gamma=0.99, lam
 # Runner for multiple environment
 class EnvRunner:
     # Constructor
-    def __init__(self, env, s_dim, a_dim, n_step=5, gamma=0.99, lamb=0.95, device="cpu"):
+    def __init__(self, env, s_dim, a_dim, n_step=5, gamma=0.99, lamb=0.95, device=None):
         self.env = env
         self.n_env = env.n_env
         self.s_dim = s_dim
@@ -55,7 +55,7 @@ class EnvRunner:
         self.n_step = n_step
         self.gamma = gamma
         self.lamb = lamb
-        self.device = device
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
 
         # last states: (n_env, s_dim)
         # last dones : (n_env)
@@ -88,15 +88,22 @@ class EnvRunner:
             # values      : (n_env)
             # rewards     : (n_env)
             # TODO 3: Run a step to collect data
-            """
-            self.mb_states[step, :]  = ...
-            self.mb_dones[step, :]   = ...
-            self.mb_actions[step, :] = ...
-            self.mb_a_logps[step, :] = ...
-            self.mb_values[step, :]  = ...
+            with torch.no_grad():
+                states_tensor = torch.from_numpy(self.states).float().to(self.device)
+                actions_tensor, a_logps_tensor = policy_net(states_tensor)
+                values_tensor = value_net(states_tensor)
+            
+            actions = actions_tensor.cpu().numpy()
+            a_logps = a_logps_tensor.cpu().numpy()
+            values = values_tensor.cpu().numpy()
+
+            self.mb_states[step, :]  = self.states
+            self.mb_dones[step, :]   = self.dones
+            self.mb_actions[step, :] = actions
+            self.mb_a_logps[step, :] = a_logps
+            self.mb_values[step, :]  = values
             self.states, rewards, self.dones, info = self.env.step(actions)
-            self.mb_rewards[step, :] = ...
-            """
+            self.mb_rewards[step, :] = rewards
 
         last_values = value_net(torch.from_numpy(self.states).float().to(self.device)).cpu().numpy()
         self.record()
