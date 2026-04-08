@@ -37,6 +37,6 @@ class MLPlay:
 
         # NOTE: DO NOT MODIFY.
         # Sending additional dummy discrete actions that would not be needed for this assignment
-        print(self.dummy_env.action_space.shape)
-        return np.zeros(self.dummy_env.action_space.shape), (0, 0)
-        # return action, (0, 0)
+        # print(self.dummy_env.action_space.shape)
+        # return np.zeros(self.dummy_env.action_space.shape), (0, 0)
+        return action, (0, 0)

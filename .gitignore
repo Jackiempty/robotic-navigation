@@ -3,6 +3,8 @@ __pycache__/
 .venv/
 result/
 save/
+*.zip
+*.tar.gz
 
 # Distribution / packaging
 .Python

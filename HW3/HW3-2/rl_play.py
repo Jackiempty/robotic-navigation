@@ -61,7 +61,7 @@ class RewardManager:
         if current_distance < prev_distance:
             return 1.0  # Positive reward for getting closer
         elif current_distance > prev_distance:
-            return -1.0 # Negative penalty for getting further away
+            return -0.5 # Negative penalty for getting further away
         return 0.0
 
     def calculate_survival_reward(self):
@@ -76,8 +76,29 @@ class RewardManager:
             return 0.0
         
         if self.observation["agent_health"] <= 0:
-            return -100.0  # Large negative penalize for death
-        return 0.1 # Small positive reward for staying alive
+            return -1000.0  # Extremely large negative penalty to strictly prevent falling into the lake
+        return 0.2 # Small positive reward for staying alive
+
+    def calculate_speed_reward(self):
+        """
+        [Speed / Time Reward]
+        Goal: Encourage the agent to finish the track as fast as possible and avoid slowing down in mud pits.
+        """
+        if self.prev_observation is None or self.observation is None:
+            return 0.0
+            
+        # 1. Time Penalty: Deduct a small score every frame to force the agent to find the fastest path (this makes it highly avoid mud pits).
+        time_penalty = -0.1 
+
+        # 2. Progress Speed Reward: Use the distance reduction as the current speed reward (the greater the reduction, the higher the reward for this step).
+        prev_distance = np.linalg.norm(self.prev_observation["target_position"])
+        current_distance = np.linalg.norm(self.observation["target_position"])
+        progress = prev_distance - current_distance  # Positive value means it is getting closer.
+        
+        # Amplify the forward progress as a speed reward. If stuck in a mud pit, progress will be very low, perhaps not even enough to offset the time_penalty.
+        speed_reward = progress * 5.0 if progress > 0 else 0.0
+
+        return time_penalty + speed_reward
 
     def calculate_reward(self):
         """
@@ -98,8 +119,9 @@ class RewardManager:
         checkpoint_score = self.calculate_flag_capture_reward()
         distance_score = self.calculate_distance_reward()
         survival_score = self.calculate_survival_reward()
+        speed_score = self.calculate_speed_reward()
         
-        return checkpoint_score + distance_score + survival_score
+        return checkpoint_score + distance_score + survival_score + speed_score
 
 
 class MLPlay:
