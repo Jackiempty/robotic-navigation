@@ -135,7 +135,7 @@ class MLPlay:
             "n_epochs": 10,
             "clip_range": 0.2,
             "gamma": 0.99,
-            "ent_coef": 0,
+            "ent_coef": 0.005,  # Slightly increase Entropy Coefficient to encourage exploration without destroying learned policies
             "vf_coef": 0.5,
             "max_grad_norm": 0.5,
             "tensorboard_log": os.path.join(os.path.dirname(__file__), "tensorboard"),
