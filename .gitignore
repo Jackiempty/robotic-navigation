@@ -5,6 +5,9 @@ result/
 save/
 *.zip
 *.tar.gz
+train/
+valid/
+*.pt
 
 # Distribution / packaging
 .Python
