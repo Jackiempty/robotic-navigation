@@ -93,4 +93,4 @@
 - `ros2_yolo_integration`: `0acc4f1` (add cuda128)
 
 以下是整合過程中的狀態參考：
-![changes](/home/candy/workspace/pros/docs/changes.png)
+![changes](./changes.png)
